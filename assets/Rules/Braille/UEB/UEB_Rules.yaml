@@ -138,43 +138,53 @@
 # matrix and determinant are the same other than "matrix"/"determinant" based on the bracketing chars
 # we don't do spatial layout, instead the beginning/ending of each row uses the enlarged bracketing chars
 -
-   name: default-matrix
-   tag: mrow
-   variables:
-      - RowStart: "*[1]"
-      - RowEnd: "*[3]"
-   match:
-      - "*[2][self::m:mtable] and"
-      - (IsBracketed(., '(', ')') or IsBracketed(., '[', ']') or IsBracketed(., '|', '|'))
-   replace: [x: "*[2]"]
+  name: default-matrix
+  tag: mrow
+  variables:
+  - RowStart: "*[1]"
+  - RowEnd: "*[3]"
+  match:
+    - "*[2][self::m:mtable] and"
+    - (IsBracketed(., '(', ')') or IsBracketed(., '[', ']') or IsBracketed(., '|', '|'))
+  replace: [x: "*[2]"]
+
 -
-   name: default-mtable
-   tag: mtable
-   match: "."
-   replace: [x: "*"]
+  name: default-mtable
+  tag: mtable
+  match: "."
+  variables:   # should only be here for lines of equations -- made up dot-6, dot 0 as a parallel to dot six before parens
+  - RowStart: "IfThenElse($RowStart = '', '⠀', $RowStart)"
+  - RowEnd: "IfThenElse($RowEnd = '', '⠀', $RowEnd)"
+  replace: [x: "*"]
+
 -
   name: default
   tag: [mtr, mlabeledtr]
   match: "."
   replace:
-   - test: 
-      if: "count(parent::*) > 1"
-      then: [t: "⠠"]
-   - t: ""
-   - x: $RowStart
-   - test:
+  - test: 
+      if: "preceding-sibling::*"   # between rows (not before the first)
+      then: [t: "⠸W"]
+  - test:
+      if: "../../self::m:mrow" # matrix, etc., or non-standalone lines (probably doesn't happen)
+      then:
+      - t: "⠠"
+      - x: $RowStart
+  - test:
       if: .[self::m:mlabeledtr]
       then:
-         - t: "⠗⠕⠺W⠇⠁⠃⠑⠇⠸⠒"  # "row label:"
-         - x: "*[1]/*"           # contents of row label
-   - test:
+          - t: "⠗⠕⠺W⠇⠁⠃⠑⠇⠸⠒"  # "row label:"
+          - x: "*[1]/*"           # contents of row label
+  - test:
       if: .[self::m:mlabeledtr]
       then: [x: "*[position()>1]"]
-      else: {x: "*"}
-   - test: 
-      if: "count(parent::*) > 1"
-      then: [t: "⠠"]
-   - x: $RowEnd
+      else: [x: "*"]
+  - test:
+      if: "../../self::m:mrow" # matrix, etc., or non-standalone lines (probably doesn't happen)
+      then:
+      - t: "⠠"
+      - x: $RowEnd
+
 -
   name: default
   tag: mtd
@@ -226,7 +236,7 @@
    # normally(?) this is an omission, but the case 6'2" causes problems due to WIRIS
    # in that case, it doesn't put the ft/in in a superscript and thinks the space is an operator
    # canonicalization moves them into <msup> with base <mn>, so this shouldn't be an omission for that case
-   match: ".='\u00A0' and @width > 1.1 and 
+   match: ".='\u00A0' and @data-width > 1.1 and
            not( preceding-sibling::*[1][self::m:msup and *[2][self::m:mo]] and
                 following-sibling::*[1][self::m:msup and *[2][self::m:mo]] )"
    replace:
@@ -271,7 +281,6 @@
    - x: "BrailleChars(., 'UEB')"
       
 -
-   # FIX: need to deal with all caps
    name: default
    tag: [mi, mtext]
    match: "."
@@ -341,7 +350,7 @@
 -
   name: single-char-exceptions    # RUEB 3.11 -- ° and various prime/minute/seconds aren't treated as if superscripts
   tag: [msup]
-  match: "*[2][translate(., \"'*`ª°²³´¹º‘’“”‟′″‴‵‶‷⁗\",'')='']"
+  match: "*[2][translate(., \"'*`´°‘’“”‟′″‴‵‶‷⁗\",'')='']"
   replace:
   - test:
       if: "NeedsToBeGrouped(*[1], 'UEB', true())"
@@ -830,7 +839,7 @@
    tag: "*"
    match: "*"    # make sure there are children
    replace: 
-   - t: "unknown math m l element"
+   - x: "BrailleChars('unknown math m l element', 'UEB')"
    - x: "name(.)"
    - x: "*"
 
@@ -840,7 +849,7 @@
    tag: "*"
    match: "text()"
    replace: 
-   - t: unknown math m l element
+   - x: "BrailleChars('unknown math m l element', 'UEB')"
    - x: "name(.)"
    - x: "text()"
 
@@ -849,5 +858,5 @@
    tag: "*"
    match: "."
    replace: 
-    - t: "empty unknown math m l element"
+    - x: "BrailleChars('empty unknown math m l element', 'UEB')"
     - x: "name(.)"

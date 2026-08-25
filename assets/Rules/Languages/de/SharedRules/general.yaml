@@ -56,16 +56,20 @@
   replace:
   - bookmark: "@id"
   - test:
+    - if: "$SpeechStyle = 'ClearSpeak' and ($ClearSpeak_SetMemberSymbol = 'In' or ($ClearSpeak_SetMemberSymbol = 'Auto' and ancestor::m:set)) and preceding::m:mo[1][.='∈' or .='∊' or .='∉']"
+      then: [T: "den"]
+      else: [T: "die"]
+  - test:
     - if: ".='ℂ'"
-      then: [T: "die komplexen zahlen"]      # phrase('the complex numbers' include 2 parts)
+      then: [T: "komplexen zahlen"]      # phrase('the complex numbers' include 2 parts)
     - else_if: ".='ℕ'"
-      then: [T: "die natürlichen zahlen"]      # phrase('the natural numbers' begin at 1)
+      then: [T: "natürlichen zahlen"]      # phrase('the natural numbers' begin at 1)
     - else_if: ".='ℚ'"
-      then: [T: "die rationalen zahlen"]      # phrase('the rational numbers' are the fraction of 2 integers)
+      then: [T: "rationalen zahlen"]      # phrase('the rational numbers' are the fraction of 2 integers)
     - else_if: ".='ℝ'"
-      then: [T: "die reellen zahlen"]      # phrase('the real numbers' can be both positive and negative)
+      then: [T: "reellen zahlen"]      # phrase('the real numbers' can be both positive and negative)
     - else_if: ".='ℤ'"
-      then: [T: "die ganzen zahlen"]      # phrase('the integers' are natural numbers above 0)
+      then: [T: "ganzen zahlen"]      # phrase('the integers' are natural numbers above 0)
       else: [x: "text()"] # shouldn't happen
 
 - name: real-part
@@ -300,7 +304,7 @@
           # HACK: '\uF8FE' is used internally for the concatenation char by 'ct' -- this gets the prefix concatenated to the base
           then: [x: "$Word"]
         - else_if: "DefinitionValue($Word, 'Speech', 'PluralForms') != ''"
-          then: [x: "DefinitionValue($Word, 'Speech', 'PluralForms')"]
+          then: [x: "DefinitionValue($Word, 'Speech', 'PluralForms')", ct: " "]
           else: [x: "$Word", ct: "s"]
       else:
       - x: "$Prefix"
@@ -310,7 +314,7 @@
           # HACK: '\uF8FE' is used internally for the concatenation char by 'ct' -- this gets the prefix concatenated to the base
           then: [x: "concat('\uF8FE', $Word)"]
         - else_if: "DefinitionValue($Word, 'Speech', 'PluralForms') != ''"
-          then: [x: "concat('\uF8FE', DefinitionValue($Word, 'Speech', 'PluralForms'))"]
+          then: [x: "concat('\uF8FE', DefinitionValue($Word, 'Speech', 'PluralForms'))", ct: " "]
           else: [x: "concat('\uF8FE', $Word)", ct: "s"]
 
     
@@ -571,13 +575,11 @@
 
 - name: identity-matrix
   tag: matrix
-  # select all the non-zero entries...if they are not on the diagonal, or are != 1
-  #   if there are any of them, then this isn't an identity matrix
+  # every diagonal entry must be a literal 1, and every off-diagonal entry must be a literal 0
   match:
-  - "count(*) = count(*[1]/*) and "
-  - "not( */*/*[not(self::m:mn and .= 0)]"
-  - "          [count(../preceding-sibling::*)!=count(../../preceding-sibling::*) or .!= 1]"
-  - "    )"
+  - "count(*) = count(*[1]/*) and " # matrix is square
+  - "not( */*[count(preceding-sibling::*) = count(../preceding-sibling::*)]/*[not(self::m:mn and .= 1)] ) and " # on-diagonal
+  - "not( */*[count(preceding-sibling::*) != count(../preceding-sibling::*)]/*[not(self::m:mn and .= 0)] )" # off-diagonal
   replace:
   - T: "die"      # phrase('the' 1 by 2 matrix M)
   - x: count(*)
@@ -670,8 +672,8 @@
   - T: "Zeile"      # phrase(the 1 by 4 'row' matrix)
   - test:
       if: "$ClearSpeak_Matrix = 'Vector' or $ClearSpeak_Matrix = 'EndVector'"
-      then: [T: "die 1 mal"]      # phrase('the 1 by' 2 row 'vector')
-      else: [T: "die 1 mal"]      # phrase('the 1 by' 2 'matrix')
+      then: [T: "vektor"]      # phrase('the 1 by' 2 row 'vector')
+      else: [T: "matrix"]      # phrase('the 1 by' 2 'matrix')
   - pause: long
   - x: "*/*"
   - test:
@@ -1028,11 +1030,11 @@
         if: "$Verbosity='Terse'"
         then: [T: "formen"]      # phrase(hydrogen and oxygen 'forms' water )
         else: [T: "reagiert auf die form"]      # phrase(hydrogen and oxygen 'reacts to form' water)
-    - else_if: ".='⇌' or .='\u1f8d2'"
+    - else_if: ".='⇌' or .='🣑'" # U+01F8D1
       then: [T: "ist im gleichgewicht mit"]      # phrase(a reactant 'is in equilibrium with' a product)
-    - else_if: ".='\u1f8d4'"
+    - else_if: ".='🣓'" # U+1F8D3
       then: [T: "ist im gleichgewicht nach links vorgespannt mit"]      # phrase(the reactant 'is in equilibrium biased to the left with' the product)
-    - else_if: ".='\u1f8d3'"
+    - else_if: ".='🣒'" # U+1F8D2
       then: [T: "ist im gleichgewicht nach rechts vorgespannt mit"]      # phrase(the reactant 'is in equilibrium biased to the right with' the product)
       else: [x: "*"]
 
