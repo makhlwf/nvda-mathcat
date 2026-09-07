@@ -348,7 +348,7 @@
 -
   name: single-char-exceptions    # RUEB 3.11 -- ° and various prime/minute/seconds aren't treated as if superscripts
   tag: msup
-  match: "*[2][translate(., \"'*`´°‘’“”‟′″‴‵‶‷⁗\",'')='']"
+  match: "*[2][translate(., \"'*`ª°²³´¹º‘’“”‟′″‴‵‶‷⁗\",'')='']"
   replace:
   - test:
       if: "NeedsToBeGrouped(*[1], 'Swedish', true())"

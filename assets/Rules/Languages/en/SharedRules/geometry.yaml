@@ -60,8 +60,7 @@
 
 - name: coordinate
   tag: coordinate
-  # Intent forms coordinate($x,...) use @arg and fall through to function-intent / IntentMappings
-  match: "not(*[@arg])"
+  match: "."
   replace:
   - test:
       if: "$Verbosity='Verbose'"
